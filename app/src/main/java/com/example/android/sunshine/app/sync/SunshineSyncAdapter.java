@@ -538,11 +538,13 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             double low = cursor.getDouble(INDEX_MIN_TEMP);
             //String desc = cursor.getString(INDEX_SHORT_DESC);
 
+            // Create a data map and put data in it
             PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/weatherData");
             putDataMapReq.getDataMap().putString("high_temp", Utility.formatTemperature(context, high));
             putDataMapReq.getDataMap().putString("low_temp", Utility.formatTemperature(context, low));
 
-            PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+            //If you do not call setUrgent(), the system may delay up to 30 minutes before syncing non-urgent DataItems,
+            PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();
 
             PendingResult<DataApi.DataItemResult> pendingResult =
                     Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
@@ -550,6 +552,12 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                 @Override
                 public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
+                    if(dataItemResult.getStatus().isSuccess()) {
+                        Log.d(LOG_TAG, "Wearable Data sync success: " + dataItemResult.getDataItem().getUri());
+                    } else {
+                        Log.d(LOG_TAG, "Wearable Data sync failed");
+                    }
+                    //Disconnect after putting map data
                     if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
                         mGoogleApiClient.disconnect();
                     }
