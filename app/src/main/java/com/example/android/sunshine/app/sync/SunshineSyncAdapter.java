@@ -81,6 +81,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             WeatherContract.WeatherEntry.COLUMN_SHORT_DESC
     };
 
+    public static final String WEATHER_PATH = "/weather";
+    public static final String HIGH_TEMP_KEY = "high_temp";
+    public static final String LOW_TEMP_KEY = "low_temp";
+
     // these indices must match the projection
     private static final int INDEX_WEATHER_ID = 0;
     private static final int INDEX_MAX_TEMP = 1;
@@ -97,7 +101,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
     public static final int LOCATION_STATUS_UNKNOWN = 3;
     public static final int LOCATION_STATUS_INVALID = 4;
 
-    GoogleApiClient mGoogleApiClient;
+    private GoogleApiClient mGoogleApiClient;
 
     public SunshineSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -134,6 +138,14 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
         String format = "json";
         String units = "metric";
         int numDays = 14;
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Wearable.API)
+                .build();
+
+        mGoogleApiClient.connect();
 
         try {
             // Construct the URL for the OpenWeatherMap query
@@ -207,14 +219,6 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
                 }
             }
         }
-
-        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Wearable.API)
-                .build();
-
-        mGoogleApiClient.connect();
 
         return;
     }
@@ -539,9 +543,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             //String desc = cursor.getString(INDEX_SHORT_DESC);
 
             // Create a data map and put data in it
-            PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/weatherData");
-            putDataMapReq.getDataMap().putString("high_temp", Utility.formatTemperature(context, high));
-            putDataMapReq.getDataMap().putString("low_temp", Utility.formatTemperature(context, low));
+            PutDataMapRequest putDataMapReq = PutDataMapRequest.create(WEATHER_PATH);
+            putDataMapReq.getDataMap().putString(HIGH_TEMP_KEY, Utility.formatTemperature(context, high));
+            putDataMapReq.getDataMap().putString(LOW_TEMP_KEY, Utility.formatTemperature(context, low));
 
             //If you do not call setUrgent(), the system may delay up to 30 minutes before syncing non-urgent DataItems,
             PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();

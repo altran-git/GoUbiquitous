@@ -39,11 +39,12 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
-import com.a2g.nd.wearable.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
@@ -101,6 +102,11 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
     private class Engine extends CanvasWatchFaceService.Engine implements DataApi.DataListener,
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
         private final String LOG_TAG = Engine.class.getSimpleName();
+
+        public static final String WEATHER_PATH = "/weather";
+        public static final String HIGH_TEMP_KEY = "high_temp";
+        public static final String LOW_TEMP_KEY = "low_temp";
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
@@ -122,6 +128,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         Date mDate;
         SimpleDateFormat mDayOfWeekFormat;
         java.text.DateFormat mDateFormat;
+
+        String mHighTemp;
+        String mLowTemp;
 
         GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(SunshineWatchFaceService.this)
                 .addConnectionCallbacks(this)
@@ -152,8 +161,24 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         }
 
         @Override
-        public void onDataChanged(DataEventBuffer dataEventBuffer) {
+        public void onDataChanged(DataEventBuffer dataEvents) {
+            Log.d(LOG_TAG, "onDataChanged");
 
+            for (DataEvent event : dataEvents) {
+                if (event.getType() == DataEvent.TYPE_CHANGED) {
+                    String path = event.getDataItem().getUri().getPath();
+                    if (WEATHER_PATH.equals(path)) {
+                        DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
+                        mHighTemp = dataMapItem.getDataMap().getString(HIGH_TEMP_KEY);
+                        mLowTemp = dataMapItem.getDataMap().getString(LOW_TEMP_KEY);
+
+                        Log.d(LOG_TAG, "HIGH TEMP" + mHighTemp);
+                        Log.d(LOG_TAG, "LOW TEMP" + mLowTemp);
+                    } else {
+                        Log.d(LOG_TAG, "Unrecognized path: " + path);
+                    }
+                }
+            }
         }
 
         @Override
