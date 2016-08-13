@@ -546,7 +546,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             //String desc = cursor.getString(INDEX_SHORT_DESC);
 
             //use existing utility function to get icon for current weather condition
-            int mIcon = Utility.getArtResourceForWeatherCondition(weatherId);
+            int mIcon = Utility.getIconResourceForWeatherCondition(weatherId);
             //Convert icon to a bitmap
             Bitmap bitmap = BitmapFactory.decodeResource(getContext().getResources(), mIcon);
             //convert bitmap to Asset, so we can send to wearable
