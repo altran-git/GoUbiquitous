@@ -42,6 +42,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
@@ -52,6 +53,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -84,6 +86,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
     public static final String WEATHER_PATH = "/weather";
     public static final String HIGH_TEMP_KEY = "high_temp";
     public static final String LOW_TEMP_KEY = "low_temp";
+    public static final String ICON_KEY = "weather_icon";
 
     // these indices must match the projection
     private static final int INDEX_WEATHER_ID = 0;
@@ -537,15 +540,23 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
         Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
 
         if (cursor.moveToFirst()) {
-            //int weatherId = cursor.getInt(INDEX_WEATHER_ID);
-            double high = cursor.getDouble(INDEX_MAX_TEMP);
-            double low = cursor.getDouble(INDEX_MIN_TEMP);
+            int weatherId = cursor.getInt(INDEX_WEATHER_ID);
+            double mHighTemp = cursor.getDouble(INDEX_MAX_TEMP);
+            double mLowTemp = cursor.getDouble(INDEX_MIN_TEMP);
             //String desc = cursor.getString(INDEX_SHORT_DESC);
+
+            //use existing utility function to get icon for current weather condition
+            int mIcon = Utility.getArtResourceForWeatherCondition(weatherId);
+            //Convert icon to a bitmap
+            Bitmap bitmap = BitmapFactory.decodeResource(getContext().getResources(), mIcon);
+            //convert bitmap to Asset, so we can send to wearable
+            Asset asset = toAsset(bitmap);
 
             // Create a data map and put data in it
             PutDataMapRequest putDataMapReq = PutDataMapRequest.create(WEATHER_PATH);
-            putDataMapReq.getDataMap().putString(HIGH_TEMP_KEY, Utility.formatTemperature(context, high));
-            putDataMapReq.getDataMap().putString(LOW_TEMP_KEY, Utility.formatTemperature(context, low));
+            putDataMapReq.getDataMap().putString(HIGH_TEMP_KEY, Utility.formatTemperature(context, mHighTemp));
+            putDataMapReq.getDataMap().putString(LOW_TEMP_KEY, Utility.formatTemperature(context, mLowTemp));
+            putDataMapReq.getDataMap().putAsset(ICON_KEY, asset);
 
             //If you do not call setUrgent(), the system may delay up to 30 minutes before syncing non-urgent DataItems,
             PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();
@@ -569,6 +580,29 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             });
         }
         cursor.close();
+    }
+
+    /**
+     * Builds an {@link com.google.android.gms.wearable.Asset} from a bitmap. The image that we get
+     * back from the camera in "data" is a thumbnail size. Typically, your image should not exceed
+     * 320x320 and if you want to have zoom and parallax effect in your app, limit the size of your
+     * image to 640x400. Resize your image before transferring to your wearable device.
+     */
+    private static Asset toAsset(Bitmap bitmap) {
+        ByteArrayOutputStream byteStream = null;
+        try {
+            byteStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+            return Asset.createFromBytes(byteStream.toByteArray());
+        } finally {
+            if (null != byteStream) {
+                try {
+                    byteStream.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
     }
 
     /**
