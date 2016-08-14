@@ -61,6 +61,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 
@@ -87,6 +88,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
     public static final String HIGH_TEMP_KEY = "high_temp";
     public static final String LOW_TEMP_KEY = "low_temp";
     public static final String ICON_KEY = "weather_icon";
+    public static final String TIME_KEY = "time";
 
     // these indices must match the projection
     private static final int INDEX_WEATHER_ID = 0;
@@ -557,6 +559,11 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter implements 
             putDataMapReq.getDataMap().putString(HIGH_TEMP_KEY, Utility.formatTemperature(context, mHighTemp));
             putDataMapReq.getDataMap().putString(LOW_TEMP_KEY, Utility.formatTemperature(context, mLowTemp));
             putDataMapReq.getDataMap().putAsset(ICON_KEY, asset);
+
+            //onDataChanged on watch gets called only if there is a change in the datapacket
+            //sending a timestamp will make this unique which will make sure onDatachange on watch gets called
+            //We do not need to retrieve this packet on the watch
+            putDataMapReq.getDataMap().putString(TIME_KEY, Calendar.getInstance().toString());
 
             //If you do not call setUrgent(), the system may delay up to 30 minutes before syncing non-urgent DataItems,
             PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();

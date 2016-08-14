@@ -213,8 +213,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
                         //Log.d(LOG_TAG, "HIGH TEMP " + mHighTemp);
                         //Log.d(LOG_TAG, "LOW TEMP " + mLowTemp);
-                    } else {
-                        Log.d(LOG_TAG, "Unrecognized path: " + path);
                     }
                 }
             }

@@ -1,7 +1,5 @@
 package com.example.android.sunshine.app.sync;
 
-import android.util.Log;
-
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.WearableListenerService;
@@ -15,7 +13,6 @@ public class SunshineWatchFaceListener extends WearableListenerService {
         for(DataEvent dataEvent: dataEventBuffer){
             if(dataEvent.getType() == DataEvent.TYPE_CHANGED){
                 String path = dataEvent.getDataItem().getUri().getPath();
-                Log.d(LOG_TAG, "onDataChanged" + path);
                 if(path.equals(UPDATE_WATCHFACE_PATH)){
                     SunshineSyncAdapter.syncImmediately(this);
                 }
