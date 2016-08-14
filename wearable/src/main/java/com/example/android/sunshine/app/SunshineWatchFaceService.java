@@ -43,11 +43,14 @@ import android.view.WindowInsets;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
 import java.io.InputStream;
@@ -115,6 +118,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         public static final String LOW_TEMP_KEY = "low_temp";
         public static final String ICON_KEY = "weather_icon";
 
+        public static final String UPDATE_WATCHFACE_PATH = "/update_watchface";
+        public static final String UPDATE_REQUEST_KEY = "update_request";
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
 
@@ -176,6 +182,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         public void onConnected(@Nullable Bundle bundle) {
             Log.d(LOG_TAG, "onConnected: Successfully connected to Google API client");
             Wearable.DataApi.addListener(mGoogleApiClient, this);
+            updateWeather();
         }
 
         @Override
@@ -204,8 +211,8 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                         // Loads image on background thread.
                         new LoadBitmapAsyncTask().execute(photoAsset);
 
-                        Log.d(LOG_TAG, "HIGH TEMP " + mHighTemp);
-                        Log.d(LOG_TAG, "LOW TEMP " + mLowTemp);
+                        //Log.d(LOG_TAG, "HIGH TEMP " + mHighTemp);
+                        //Log.d(LOG_TAG, "LOW TEMP " + mLowTemp);
                     } else {
                         Log.d(LOG_TAG, "Unrecognized path: " + path);
                     }
@@ -428,6 +435,25 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             }
         }
 
+        public void updateWeather(){
+            PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(UPDATE_WATCHFACE_PATH);
+            putDataMapRequest.getDataMap().putString(UPDATE_REQUEST_KEY, Calendar.getInstance().toString());
+            PutDataRequest request = putDataMapRequest.asPutDataRequest();
+
+            Wearable.DataApi.putDataItem(mGoogleApiClient, request)
+                    .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                        @Override
+                        public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
+                            if(dataItemResult.getStatus().isSuccess()){
+                                Log.d(LOG_TAG, "Update Watchface Weather Success.");
+                            } else {
+                                Log.d(LOG_TAG, "Update Watchface Weather Failed.");
+                            }
+                        }
+                    });
+        }
+
+
         /**
          * Starts the {@link #mUpdateTimeHandler} timer if it should be running and isn't currently
          * or stops it if it shouldn't be running but currently is.
@@ -491,7 +517,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             @Override
             protected void onPostExecute(Bitmap bitmap) {
                 if (bitmap != null) {
-                    Log.d(LOG_TAG, "Get bitmap");
+                    //Log.d(LOG_TAG, "Get bitmap");
                     mBitmap = bitmap;
                 }
             }
