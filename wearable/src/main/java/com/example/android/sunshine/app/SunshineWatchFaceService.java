@@ -408,9 +408,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             canvas.drawText(dateText, mDateXOffset, mDateYOffset, mDateTextPaint);
 
             if(!mAmbient && mBitmap != null && mHighTemp != null && mLowTemp != null) {
-                //Draw a line in the middle to separate Time/Date from Weather Data
-                canvas.drawLine(bounds.centerX() - 50, bounds.centerY(), bounds.centerX() + 50, bounds.centerY(), mDateTextPaint);
-
                 //Draw High temp
                 Rect highTempTextBounds = new Rect();
                 mHighTextPaint.getTextBounds(mHighTemp, 0, 1, highTempTextBounds);
@@ -430,6 +427,10 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 //Draw Low temp
                 mLowTempXOffset = mHighTempXOffset + highTempLength + mHighLowSpacing;
                 canvas.drawText(mLowTemp, mLowTempXOffset, mTempYOffset, mLowTextPaint);
+
+                //Draw a line to separate Time/Date from Weather Data
+                float mLineYOffset = mDateYOffset + (mTempYOffset - highTempHeight - mDateYOffset)/2;
+                canvas.drawLine(bounds.centerX() - 50, mLineYOffset, bounds.centerX() + 50, mLineYOffset, mDateTextPaint);
             }
         }
 
